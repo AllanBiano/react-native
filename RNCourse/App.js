@@ -1,94 +1,86 @@
 import { useState } from "react";
-import { StatusBar, StyleSheet, View, FlatList, Button } from "react-native";
+import { ImageBackground, SafeAreaView, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useFonts } from "expo-font";
+import AppLoading from "expo-app-loading";
 
-import GoalInput from "./components/GoalInput";
-import GoalItem from "./components/GoalItem";
-import { StatusBar } from "expo-status-bar";
+import GameScreen from "./screens/GameScreen";
+import StartGameScreen from "./screens/StartGameScreen";
+import GameOverScreen from "./screens/GameOverScreen";
+import Colors from "./constants/colors";
 
 export default function App() {
-  const [modalIsVisible, setmodalIsVisible] = useState(false);
-  const [goals, setGoals] = useState([]);
+  const [userNumber, setUserNumber] = useState();
+  const [gameIsOver, setgameIsOver] = useState(true);
+  const [counterRounds, setCounterRounds] = useState(0);
 
-  const startAddGoalHandler = () => {
-    setmodalIsVisible(true);
+  const [fontsLoaded] = useFonts({
+    "open-sans": require("./assets/fonts/OpenSans-Regular.ttf"),
+    "open-sans-bold": require("./assets/fonts/OpenSans-Bold.ttf"),
+  });
+
+  const pickedNumberHandler = (pickedNumber) => {
+    setUserNumber(parseInt(pickedNumber));
+    setgameIsOver(false);
   };
 
-  const closeAddGoalHandler = () => {
-    setmodalIsVisible(false);
+  const gameOverHandler = (numberOfGuess) => {
+    setgameIsOver(true);
+    setCounterRounds(numberOfGuess)
   };
 
-  const onAddGoalHandler = (inputText) => {
-    setGoals((prevGoals) => [
-      ...prevGoals,
-      {
-        text: inputText,
-        key: Math.random().toString(),
-        id: Math.random().toString(),
-      },
-    ]);
-    closeAddGoalHandler();
+  const startNewGameHandler = () => {
+    setUserNumber(null);
+    setCounterRounds(0);
   };
 
-  const onDeleteGoalHandler = (id) => {
-    setGoals((prevGoals) => {
-      return prevGoals.filter((prevGoals) => prevGoals.id !== id);
-    });
-  };
+  let screen = <StartGameScreen onPickNumber={pickedNumberHandler} />;
+
+  if (!fontsLoaded) {
+    return <AppLoading />;
+  }
+
+  if (userNumber) {
+    screen = (
+      <GameScreen
+        userNumber={userNumber}
+        onGameOver={gameOverHandler}
+      />
+    );
+  }
+
+  if (gameIsOver && userNumber) {
+    screen = (
+      <GameOverScreen
+        roundsNumber={counterRounds}
+        userNumber={userNumber}
+        onStartNewGame={startNewGameHandler}
+      />
+    );
+  }
 
   return (
-    <>
-      <StatusBar />
-      <View style={styles.appContainer}>
-        <Button
-          title="Add New Goal"
-          color="#a065ec"
-          onPress={startAddGoalHandler}
-        />
-        {modalIsVisible && (
-          <GoalInput
-            visible={modalIsVisible}
-            onAddGoal={onAddGoalHandler}
-            onCloseModal={closeAddGoalHandler}
-          />
-        )}
-        <View style={styles.goalsContainer}>
-          {/* <ScrollView>
-          {goals.map((goal) => (
-            <View style={styles.goalItem} key={goal}>
-              <Text style={styles.goalText}>{goal}</Text>{" "}
-            </View>
-          ))}
-        </ScrollView> */}
-          {/* FlatList -> Alternativa mais performatica que o ScrollView */}
-          <FlatList
-            data={goals}
-            renderItem={(goalItem) => {
-              return (
-                <GoalItem
-                  text={goalItem.item.text}
-                  id={goalItem.item.id}
-                  onDeleteItem={onDeleteGoalHandler}
-                />
-              );
-            }}
-            // keyExtract serve para transformar um id ou algo do tipo em key, pq comp so aceita uma key
-            keyExtractor={(item) => {
-              return item.id;
-            }}
-          />
-        </View>
-      </View>
-    </>
+    <LinearGradient
+      colors={[Colors.primary800, Colors.accent500]}
+      style={styles.rootScreen}
+    >
+      <ImageBackground
+        source={require("./assets/images/background.png")}
+        resizeMode="cover"
+        style={styles.rootScreen}
+        imageStyle={styles.backgroundImage}
+      >
+        <SafeAreaView style={styles.rootScreen}>{screen}</SafeAreaView>
+      </ImageBackground>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  appContainer: {
+  rootScreen: {
     flex: 1,
-    paddingTop: 50,
-    paddingHorizontal: 16,
   },
-  goalsContainer: {
-    flex: 4,
+  backgroundImage: {
+    opacity: 0.15,
   },
 });
