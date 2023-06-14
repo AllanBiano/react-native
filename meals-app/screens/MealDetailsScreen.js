@@ -1,19 +1,37 @@
 import { Image, StyleSheet, View, Text, ScrollView } from "react-native";
-import { useLayoutEffect } from "react";
+import { useContext, useLayoutEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { MEALS } from "../data/dummy-data";
 import MealDetails from "../components/MealDetails";
 import Subtitle from "../components/MealDetail/Subtitle";
 import List from "../components/MealDetail/List";
 import IconButton from "../components/IconButton";
+import { FavoritesContext } from "../store/context/favorites-context";
+import { addFavorite, removeFavorite } from "../store/redux/favorites";
 
 function MealDetailsScreen({ route, navigation }) {
+  // const favoriteMealsCtx = useContext(FavoritesContext);
+  // 1. How GET/READ value in redux
+  const favoriteMealsIds = useSelector((state) => state.favoriteMeals.ids);
+  // 2. How DISPATCH value in redux
+  const dispatch = useDispatch();
+
   const mealId = route.params.mealId;
 
   const selectedMeal = MEALS.find((meal) => meal.id === mealId);
 
-  const headerButtonPressHandler = () => {
-    console.log("Pressed!");
+  const mealIsFavorite = favoriteMealsIds.includes(mealId);
+
+  const changeFavoriteStatusHandler = () => {
+    if (mealIsFavorite) {
+      // favoriteMealsCtx.removeFavorite(mealId);
+      // 2. How DISPATCH value in redux
+      dispatch(removeFavorite({ id: mealId }));
+    } else {
+      // 2. How DISPATCH value in redux
+      dispatch(addFavorite({ id: mealId }));
+    }
   };
 
   useLayoutEffect(() => {
@@ -21,14 +39,14 @@ function MealDetailsScreen({ route, navigation }) {
       headerRight: () => {
         return (
           <IconButton
-            icon="star"
+            icon={mealIsFavorite ? "star" : "star-outline"}
             color="white"
-            onPress={headerButtonPressHandler}
+            onPress={changeFavoriteStatusHandler}
           />
         );
       },
     });
-  }, [navigation, headerButtonPressHandler]);
+  }, [navigation, changeFavoriteStatusHandler]);
 
   return (
     <ScrollView style={styles.rootContainer}>
